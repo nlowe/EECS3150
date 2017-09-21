@@ -1,4 +1,4 @@
-# EECS 3150 - Data Communications
+# EECS 3150 - Data Communications [![Build Status](https://travis-ci.org/nlowe/EECS3150.svg?branch=master)](https://travis-ci.org/nlowe/EECS3150)
 
 Projects and code samples for EECS 3150 - Data Communications for the Fall 2017 Semester
 at the University of Toledo
