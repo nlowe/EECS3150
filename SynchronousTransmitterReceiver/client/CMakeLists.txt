@@ -6,4 +6,4 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../common")
 
 set(SOURCE_FILES main.cpp)
 add_executable(client ${SOURCE_FILES})
-target_link_libraries(client common)
+target_link_libraries(client sts)
