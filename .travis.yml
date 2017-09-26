@@ -1,17 +1,9 @@
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-7
-      - gcc-7
+sudo: required
+service:
+  - docker
 
-install:
-  - export CXX="g++-7" CC="gcc-7"
-
-before_script:
-  - mkdir -p build && cd build
-  - cmake ..
+before_install:
+  - docker pull nlowe/gcc-cmake:latest
 
 script:
-  - make
+  - docker run -v $(pwd):/build -w /build --rm nlowe/gcc-cmake:latest ./build.sh
