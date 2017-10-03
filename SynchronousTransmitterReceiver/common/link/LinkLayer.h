@@ -1,14 +1,11 @@
-//
-// Created by nathan on 9/21/17.
-//
-
 #ifndef SYNCHRONOUSTRANSMITTERRECEIVER_LINKLAYER_H
 #define SYNCHRONOUSTRANSMITTERRECEIVER_LINKLAYER_H
 
 
 #include <memory>
+#include <utility>
 #include "../phy/IPhysicalLayer.h"
-#include "Frame.h"
+#include "../phy/FileBasedPhysicalLayer.h"
 
 /**
  * An abstraction representing the link layer in the OSI Network Model
@@ -17,8 +14,8 @@ namespace libsts::link
 {
     class LinkLayer {
     public:
-        explicit LinkLayer(std::shared_ptr<libsts::phy::IPhysicalLayer> &phy)
-            : phy(phy)
+        explicit LinkLayer(std::shared_ptr<libsts::phy::IPhysicalLayer> phy)
+            : phy(std::move(phy))
         {
         }
 
@@ -32,19 +29,47 @@ namespace libsts::link
         void close();
 
         /**
-         * Write a frame to the link
-         * @param frame The frame to write
+         * Write the specified buffer out to the channel
+         *
+         * @param buff the data to write
+         * @param len the number of bytes in the buffer
          */
-        void write(std::shared_ptr<Frame> frame);
+        void write(const char* buff, size_t len);
         /**
-         * Read a frame from the link
-         * @return a frame read from the link
+         * Read as many bytes as possible from the link
+         *
+         * @param len Populated with the total number of data bytes read
+         * @return a shared pointer to the data
          */
-        std::shared_ptr<Frame> read();
+        char* readAll(size_t &len);
+
+        /**
+         * @return The direction the channel is open in
+         */
+        const libsts::Direction GetDirection()
+        {
+            return phy->GetDirection();
+        }
     private:
         std::shared_ptr<libsts::phy::IPhysicalLayer> phy;
         bool closed = true;
     };
+
+    std::shared_ptr<libsts::link::LinkLayer> CreateFileBasedReader(const std::string &file)
+    {
+        auto phy = std::make_shared<libsts::phy::FileBasedPhysicalLayer>(file, libsts::Direction::READ);
+        auto link = std::make_shared<libsts::link::LinkLayer>(phy);
+
+        return link;
+    }
+
+    std::shared_ptr<libsts::link::LinkLayer> CreateFileBasedWriter(const std::string &file)
+    {
+        auto phy = std::make_shared<libsts::phy::FileBasedPhysicalLayer>(file, libsts::Direction::WRITE);
+        auto link = std::make_shared<libsts::link::LinkLayer>(phy);
+
+        return link;
+    }
 }
 
 

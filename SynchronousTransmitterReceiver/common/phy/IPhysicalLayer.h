@@ -1,12 +1,10 @@
-//
-// Created by nathan on 9/21/17.
-//
-
 #ifndef SYNCHRONOUSTRANSMITTERRECEIVER_IPHYSICALLAYER_H
 #define SYNCHRONOUSTRANSMITTERRECEIVER_IPHYSICALLAYER_H
 
 
 #include <cstdint>
+#include <memory>
+#include "../libsts.h"
 
 namespace libsts::phy
 {
@@ -28,20 +26,20 @@ namespace libsts::phy
         virtual void close() = 0;
 
         /**
-         * Write the specified buffer out to the channel
+         * Write data to the physical link
          *
-         * @param buff the data to write
-         * @param len the number of bytes in the buffer
+         * @param data The data buffer to write
+         * @param len how many bytes are in the buffer
          */
-        virtual void write(const char* buff, size_t len) = 0;
+        virtual void write(const char* data, size_t len) = 0;
         /**
-         * Read the specified number of bytes from the channel into the buffer.
+         * Attempt to read the requested number of bytes from the link
          *
-         * @param buff The buffer to place the bytes into
-         * @param count The number of bytes to read
-         * @return the actual number of bytes read from the channel
+         * @param buff the buffer to read into
+         * @param len the number of bytes to read
+         * @return the actual number of bytes read
          */
-        virtual size_t read(char* &buff, size_t count) = 0;
+        virtual size_t read(char* buff, size_t len) = 0;
 
         /**
          * Write the buffer to the physical device
@@ -49,6 +47,11 @@ namespace libsts::phy
          * @return the number of bytes written
          */
         virtual uint32_t flush() = 0;
+
+        /**
+         * @return The direction the channel is open in
+         */
+        virtual const libsts::Direction GetDirection() = 0;
     };
 }
 

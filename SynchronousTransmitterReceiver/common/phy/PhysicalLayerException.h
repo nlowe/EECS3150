@@ -1,7 +1,3 @@
-//
-// Created by nathan on 9/21/17.
-//
-
 #ifndef SYNCHRONOUSTRANSMITTERRECEIVER_PHYSICALLAYEREXCEPTION_H
 #define SYNCHRONOUSTRANSMITTERRECEIVER_PHYSICALLAYEREXCEPTION_H
 
@@ -13,6 +9,12 @@ namespace libsts::phy
     {
     public:
         explicit PhysicalLayerException(const std::string &__arg) : runtime_error(__arg) {}
+    };
+
+    class ParityCheckFailure: public PhysicalLayerException
+    {
+    public:
+        explicit ParityCheckFailure(const std::string &__arg) : PhysicalLayerException(__arg) {}
     };
 
     class NotConnectedException: public PhysicalLayerException
