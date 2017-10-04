@@ -11,6 +11,12 @@ namespace libsts::phy
         explicit PhysicalLayerException(const std::string &__arg) : runtime_error(__arg) {}
     };
 
+    class IllegalEncodingException: public PhysicalLayerException
+    {
+    public:
+        explicit IllegalEncodingException(const std::string &__arg) : PhysicalLayerException(__arg) {}
+    };
+
     class ParityCheckFailure: public PhysicalLayerException
     {
     public:

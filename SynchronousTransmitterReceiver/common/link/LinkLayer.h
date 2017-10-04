@@ -43,29 +43,14 @@ namespace libsts::link
          */
         char* readAll(size_t &len);
 
-        /**
-         * @return The direction the channel is open in
-         */
-        const libsts::Direction GetDirection()
-        {
-            return phy->GetDirection();
-        }
     private:
-        std::shared_ptr<libsts::phy::IPhysicalLayer> phy;
+        std::shared_ptr<libsts::phy::IPhysicalLayer> phy{};
         bool closed = true;
     };
 
-    std::shared_ptr<libsts::link::LinkLayer> CreateFileBasedReader(const std::string &file)
+    std::shared_ptr<libsts::link::LinkLayer> CreateFileBasedLink(const std::string &file)
     {
-        auto phy = std::make_shared<libsts::phy::FileBasedPhysicalLayer>(file, libsts::Direction::READ);
-        auto link = std::make_shared<libsts::link::LinkLayer>(phy);
-
-        return link;
-    }
-
-    std::shared_ptr<libsts::link::LinkLayer> CreateFileBasedWriter(const std::string &file)
-    {
-        auto phy = std::make_shared<libsts::phy::FileBasedPhysicalLayer>(file, libsts::Direction::WRITE);
+        auto phy = std::make_shared<libsts::phy::FileBasedPhysicalLayer>(file);
         auto link = std::make_shared<libsts::link::LinkLayer>(phy);
 
         return link;

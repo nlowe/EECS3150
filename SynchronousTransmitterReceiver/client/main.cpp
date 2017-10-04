@@ -12,7 +12,7 @@ void printUsage()
     std::cout << std::endl;
     std::cout << "Arguments:" << std::endl;
     std::cout << std::endl;
-    std::cout << R"(    <input>|-    The file to "download". If "-" read from stdin instead)" << std::endl;
+    std::cout << R"(    <input>   The file to "download")" << std::endl;
     std::cout <<   "    [output]  The file write to. If blank, write to stdout" << std::endl;
     std::cout << std::endl;
     std::cout << R"("Downloads" the specified file by decoding bytes with parity and virtual framing)";
@@ -23,15 +23,15 @@ char* decode(const std::string &in, size_t &len)
 {
     try
     {
-        auto reader = libsts::link::CreateFileBasedReader(in);
-
-        size_t dataLen = 0;
-        auto data = reader->readAll(dataLen);
-
+        auto reader = libsts::link::CreateFileBasedLink(in);
+        reader->open();
+        return reader->readAll(len);
     }
     catch(std::exception &ex)
     {
-
+        std::cerr << "Failed to decode file: " << ex.what() << std::endl;
+        len = 0;
+        return nullptr;
     }
 }
 
@@ -58,6 +58,8 @@ int processToFile(const std::string &in, const std::string &out)
 
     writer.write(buff, len);
     writer.close();
+
+    return 0;
 }
 
 int processToStandardOut(const std::string &in)
@@ -74,6 +76,8 @@ int processToStandardOut(const std::string &in)
     std::cout << buff << std::endl;
 
     delete[] buff;
+
+    return 0;
 }
 
 int main(int argc, char* argv[])
@@ -89,7 +93,7 @@ int main(int argc, char* argv[])
         }
         else
         {
-            return processToStandardOut(std::string(argv[0]));
+            return processToStandardOut(std::string(argv[1]));
         }
     }
     else if(argc == 3)

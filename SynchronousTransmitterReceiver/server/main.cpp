@@ -30,7 +30,7 @@ int processFile(const std::string &in, const std::string &out)
         return ERR_INPUT;
     }
 
-    auto writer = libsts::link::CreateFileBasedWriter(out);
+    auto writer = libsts::link::CreateFileBasedLink(out);
     try {
         writer->open();
     }

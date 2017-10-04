@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <memory>
-#include "../libsts.h"
 
 namespace libsts::phy
 {
@@ -49,9 +48,9 @@ namespace libsts::phy
         virtual uint32_t flush() = 0;
 
         /**
-         * @return The direction the channel is open in
+         * @return true if there is no more data on the link
          */
-        virtual const libsts::Direction GetDirection() = 0;
+        virtual bool eof() = 0;
     };
 }
 

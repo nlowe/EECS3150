@@ -11,8 +11,7 @@ namespace libsts::phy
 {
     class FileBasedPhysicalLayer : public IPhysicalLayer {
     public:
-        explicit FileBasedPhysicalLayer(std::string file, libsts::Direction direction)
-                : Direction(direction), file(std::move(file)) {}
+        explicit FileBasedPhysicalLayer(const std::string &file) : file(std::move(file)) {}
         ~FileBasedPhysicalLayer() override;
 
         void write(const char *data, size_t len) override;
@@ -25,26 +24,12 @@ namespace libsts::phy
 
         const std::string GetFile() { return file; }
 
-        const libsts::Direction GetDirection() override
-        {
-            return Direction;
-        }
+        bool eof() override;
 
     private:
-        inline const char calculateParity();
-        inline const char encodebit(const char& c, uint8_t bit);
-
-        const libsts::Direction Direction;
-
         const std::string file;
         std::fstream link;
         bool closed = true;
-
-        uint8_t BitInByteCounter = 0;
-        uint8_t BitCounter = 0;
-
-        uint8_t ParityBuffer = 0;
-        uint8_t BitBuffer = 0;
     };
 }
 

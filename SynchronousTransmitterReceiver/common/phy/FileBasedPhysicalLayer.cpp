@@ -1,7 +1,5 @@
-#include <unitypes.h>
 #include "FileBasedPhysicalLayer.h"
 #include "PhysicalLayerException.h"
-#include "../libsts_except.h"
 
 namespace libsts::phy
 {
@@ -25,7 +23,7 @@ namespace libsts::phy
     {
         if(!closed) return;
 
-        link.open(file, std::ios::in | std::ios::out | std::ios::trunc);
+        link.open(file, std::ios::in | std::ios::out | std::ios::app);
         if(!link.good())
         {
             perror("Could not open communication file: ");
@@ -44,122 +42,98 @@ namespace libsts::phy
         closed = true;
     }
 
-    inline const char FileBasedPhysicalLayer::calculateParity()
+    inline const char calculateParity(uint8_t byte)
     {
-        ParityBuffer ^= ParityBuffer >> 4;
-        ParityBuffer ^= ParityBuffer >> 2;
-        ParityBuffer ^= ParityBuffer >> 1;
+        byte ^= byte >> 4;
+        byte ^= byte >> 2;
+        byte ^= byte >> 1;
 
-        return ((~ParityBuffer) & 1) == 1 ? '1' : '0';
+        return ((~byte) & 1) == 1 ? '1' : '0';
     }
 
-    inline const char FileBasedPhysicalLayer::encodebit(const char& c, uint8_t bit)
+    inline const char encodebit(const char& c, uint8_t bit)
     {
-        auto v = (c & (1 << bit)) >> bit;
-        ParityBuffer |= v;
-        ParityBuffer <<= 1;
-        return v == 1 ? '1' : '0';
+        return (c & (1 << bit)) >> bit == 1 ? '1' : '0';
+    }
+
+    inline const uint8_t decodebit(const char& c, uint8_t bit)
+    {
+        if (c == '1')
+        {
+            return static_cast<const uint8_t>(1 << bit);
+        }
+        else if(c == '0')
+        {
+            return 0;
+        }
+        else
+        {
+            throw IllegalEncodingException("Expected a '1' or '0' but got a " + std::to_string(c));
+        }
     }
 
     void FileBasedPhysicalLayer::write(const char *data, size_t len)
     {
-        if(Direction != libsts::Direction::WRITE) throw libsts::LinkDirectionException("Stream is read only");
+        // Each byte becomes 8 "bits": 7 data bits (with the MSB of the byte = 0) and a parity bit
+        auto stupidEncoding = new char[len * 8];
 
-        // Each byte becomes 8 "bits" and for every 7 "bits" we have a checksum bit
-        auto bits = len * 8;
-        auto bytes = bits + bits / 7;
-        auto stupidEncoding = new char[bytes];
-
-        auto r = 0;
-        auto w = 0;
-        auto d = 0;
-
-        while(r < len)
+        for(auto i = 0; i < len; i++)
         {
-            auto byte = data[r++];
+            auto byte = reinterpret_cast<uint8_t&>(const_cast<char&>(data[i]));
 
-            for(uint8_t i = 0; i < 8; i++)
-            {
-                stupidEncoding[w++] = encodebit(byte, i);
-                d++;
-                if(d % 7 == 0)
-                {
-                    stupidEncoding[w++] = calculateParity();
-                    ParityBuffer = 0;
-                }
-            }
+            if(byte & 0x80) throw IllegalEncodingException("This project only supports 7-bit ascii");
+            byte &= 0x7f;
+
+            stupidEncoding[(i * 8) + 0] = encodebit(byte, 0);
+            stupidEncoding[(i * 8) + 1] = encodebit(byte, 1);
+            stupidEncoding[(i * 8) + 2] = encodebit(byte, 2);
+            stupidEncoding[(i * 8) + 3] = encodebit(byte, 3);
+            stupidEncoding[(i * 8) + 4] = encodebit(byte, 4);
+            stupidEncoding[(i * 8) + 5] = encodebit(byte, 5);
+            stupidEncoding[(i * 8) + 6] = encodebit(byte, 6);
+            stupidEncoding[(i * 8) + 7] = calculateParity(byte);
         }
 
         // Write the expanded bits to the stream
-        link.write(stupidEncoding, bytes);
+        link.write(stupidEncoding, len * 8);
         delete[] stupidEncoding;
     }
 
     size_t FileBasedPhysicalLayer::read(char *buff, size_t len)
     {
-        if(Direction != libsts::Direction::READ) throw libsts::LinkDirectionException("Stream is write only");
+        // Each byte becomes 8 "bits": 7 data bits (with the MSB of the byte = 0) and a parity bit
+        auto stupidEncoding = new char[len * 8];
 
-        // Each byte becomes 8 "bits" and for every 7 "bits" we have a checksum bit
-        auto bits = len * 8;
-        auto bytes = bits + bits / 7;
-        auto stupidEncoding = new char[bytes];
+        link.read(stupidEncoding, len * 8);
+        auto bitlen = link.gcount();
+        auto realLen = static_cast<size_t>(bitlen / 8);
 
-        auto pos = link.tellg();
-        link.read(stupidEncoding, bytes);
-        auto size = link.tellg() - pos;
-
-        auto r = 0;
-        size_t w = 0;
-
-        while(r < size)
+        for(auto i = 0; i < realLen; i++)
         {
-            auto bit = stupidEncoding[r++];
-            if(bit == '1')
-            {
-                BitBuffer |= 1;
-                ParityBuffer |= 1;
-                ParityBuffer <<= 1;
-            }
-            else if(bit != '0')
-            {
-                throw PhysicalLayerException("Illegal Encoding. Expected a '0' or '1' but got " + bit);
-            }
+            uint8_t byte = 0;
 
-            if(++BitInByteCounter == 8)
-            {
-                buff[w++] = BitBuffer;
-                BitInByteCounter = BitBuffer = 0;
-            }
-            else
-            {
-                BitBuffer <<= 1;
-                if(BitCounter % 7 == 0)
-                {
-                    if(r < size)
-                    {
-                        auto parityBit = stupidEncoding[r++];
+            byte |= decodebit(stupidEncoding[(i * 8) + 0], 0);
+            byte |= decodebit(stupidEncoding[(i * 8) + 1], 1);
+            byte |= decodebit(stupidEncoding[(i * 8) + 2], 2);
+            byte |= decodebit(stupidEncoding[(i * 8) + 3], 3);
+            byte |= decodebit(stupidEncoding[(i * 8) + 4], 4);
+            byte |= decodebit(stupidEncoding[(i * 8) + 5], 5);
+            byte |= decodebit(stupidEncoding[(i * 8) + 6], 6);
 
-                        if(calculateParity() != parityBit)
-                        {
-                            delete[] stupidEncoding;
-                            throw PhysicalLayerException("Parity Check Failed");
-                        }
-
-                        ParityBuffer = 0;
-                    }
-                    else
-                    {
-                        delete[] stupidEncoding;
-                        throw PhysicalLayerException("Not enough bits for parity check");
-                    }
-                }
+            if(calculateParity(byte) != stupidEncoding[(i * 8) + 7])
+            {
+                throw ParityCheckFailure("Parity check failed for byte " + std::to_string(i));
             }
 
-            if(++BitCounter == 64) BitCounter = 0;
+            buff[i] = byte;
         }
 
         delete[] stupidEncoding;
-        return w;
+        return realLen;
+    }
+
+    bool FileBasedPhysicalLayer::eof() {
+        return link.eof();
     }
 }
 
