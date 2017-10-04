@@ -6,6 +6,8 @@
 #define ERR_INPUT  2
 #define ERR_OUTPUT 3
 
+#define DEV_STDOUT "/dev/stdout"
+
 void printUsage()
 {
     std::cout << "server <input>|- [output]" << std::endl;
@@ -19,7 +21,7 @@ void printUsage()
     std::cout << R"(to the output file (or stdout) to be read by the "client" program)" << std::endl;
 }
 
-int processFile(const std::string &in, const std::string &out)
+char* getFile(const std::string &in, size_t &len)
 {
     std::ifstream reader;
     reader.open(in, std::ios::ate);
@@ -27,60 +29,90 @@ int processFile(const std::string &in, const std::string &out)
     {
         reader.close();
         std::cerr << "Could not open file for read: " << in << std::endl;
-        return ERR_INPUT;
+        return nullptr;
     }
 
-    auto writer = libsts::link::CreateFileBasedLink(out);
-    try {
-        writer->open();
-    }
-    catch (std::exception &ex)
-    {
-        reader.close();
-        std::cerr << "Could not create writer: " << ex.what() << std::endl;
-        return ERR_OUTPUT;
-    }
-
-    auto len = reader.tellg();
+    len = static_cast<size_t>(reader.tellg());
     auto bytes = new char[len]{0};
     reader.seekg(0);
     reader.read(bytes, len);
     reader.close();
 
-    try
-    {
-        writer->write(bytes, len);
+    return bytes;
+}
+
+char* getStdin(size_t &len)
+{
+    std::cin >> std::noskipws;
+    std::istreambuf_iterator<char> it(std::cin);
+    std::istreambuf_iterator<char> end;
+    std::string buff(it, end);
+
+    len = buff.length();
+    auto data = new char[len]{0};
+    std::copy(buff.begin(), buff.end(), &data[0]);
+
+    return data;
+}
+
+int processFile(const char* buff, size_t len, const std::string &out)
+{
+    auto writer = libsts::link::CreateFileBasedWriter(out);
+    try {
+        writer->open();
     }
     catch (std::exception &ex)
     {
-        reader.close();
+        std::cerr << "Could not create writer: " << ex.what() << std::endl;
+        return ERR_OUTPUT;
+    }
+
+    try
+    {
+        writer->write(buff, len);
+    }
+    catch (std::exception &ex)
+    {
         writer->close();
 
-        delete[] bytes;
         std::cerr << "Error encoding input: " << ex.what() << std::endl;
         return ERR_OUTPUT;
     }
 
-    std::cout << "Encoded '" << in << "' to '" << out << "'" << std::endl;
-
     writer->close();
-    delete[] bytes;
     return 0;
 }
 
 int main(int argc, char* argv[]) {
-    if(argc == 2 && std::string(argv[1]) == "-h")
+    if(argc == 2)
     {
-        printUsage();
-        return 0;
-    }
+        auto arg = std::string(argv[1]);
 
-    if(argc != 3)
+        if(arg == "-h" || arg == "--help")
+        {
+            printUsage();
+            return 0;
+        }
+    }
+    else if(argc < 2 || argc > 3)
     {
         std::cerr << "Syntax Error!" << std::endl;
         printUsage();
         return ERR_SYNTAX;
     }
 
-    return processFile(std::string(argv[1]), std::string(argv[2]));
+    auto inputFile = std::string(argv[1]);
+    size_t inputLen = 0;
+    char* input = inputFile == "-" ? getStdin(inputLen) : getFile(inputFile, inputLen);
+
+    if(input == nullptr || inputLen == 0)
+    {
+        std::cerr << "Could not read input" << std::endl;
+        return ERR_INPUT;
+    }
+
+    auto ret = processFile(input, inputLen, argc == 2 ? DEV_STDOUT : std::string(argv[2]));
+
+    delete[] input;
+    return ret;
 }

@@ -6,6 +6,8 @@
 #define ERR_INPUT  2
 #define ERR_OUTPUT 3
 
+#define DEV_STDIN "/dev/stdin"
+
 void printUsage()
 {
     std::cout << "client <input>|- [output]" << std::endl;
@@ -23,7 +25,7 @@ char* decode(const std::string &in, size_t &len)
 {
     try
     {
-        auto reader = libsts::link::CreateFileBasedLink(in);
+        auto reader = libsts::link::CreateFileBasedReader(in);
         reader->open();
         return reader->readAll(len);
     }
@@ -93,12 +95,14 @@ int main(int argc, char* argv[])
         }
         else
         {
-            return processToStandardOut(std::string(argv[1]));
+            auto inputFile = std::string(argv[1]);
+            return processToStandardOut(inputFile == "-" ? DEV_STDIN : inputFile);
         }
     }
     else if(argc == 3)
     {
-        return processToFile(std::string(argv[1]), std::string(argv[2]));
+        auto inputFile = std::string(argv[1]);
+        return processToFile(inputFile == "-" ? DEV_STDIN : inputFile, std::string(argv[2]));
     }
     else
     {

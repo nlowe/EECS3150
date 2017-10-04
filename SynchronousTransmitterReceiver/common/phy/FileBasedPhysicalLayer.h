@@ -11,7 +11,8 @@ namespace libsts::phy
 {
     class FileBasedPhysicalLayer : public IPhysicalLayer {
     public:
-        explicit FileBasedPhysicalLayer(const std::string &file) : file(std::move(file)) {}
+        FileBasedPhysicalLayer(const std::string &file, const libsts::Direction direction)
+                : direction(direction),  file(std::move(file)) {}
         ~FileBasedPhysicalLayer() override;
 
         void write(const char *data, size_t len) override;
@@ -26,7 +27,10 @@ namespace libsts::phy
 
         bool eof() override;
 
+        Direction getDirection() override;
+
     private:
+        const libsts::Direction direction{};
         const std::string file;
         std::fstream link;
         bool closed = true;

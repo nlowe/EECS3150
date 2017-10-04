@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <memory>
+#include "../libsts.h"
 
 namespace libsts::phy
 {
@@ -51,6 +52,11 @@ namespace libsts::phy
          * @return true if there is no more data on the link
          */
         virtual bool eof() = 0;
+
+        /**
+         * @return the direction the layer operates in
+         */
+        virtual libsts::Direction getDirection() = 0;
     };
 }
 

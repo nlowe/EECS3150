@@ -1,5 +1,7 @@
+#include <iostream>
 #include "FileBasedPhysicalLayer.h"
 #include "PhysicalLayerException.h"
+#include "../libsts.h"
 
 namespace libsts::phy
 {
@@ -23,7 +25,15 @@ namespace libsts::phy
     {
         if(!closed) return;
 
-        link.open(file, std::ios::in | std::ios::out | std::ios::app);
+        if(direction == libsts::Direction::WRITE)
+        {
+            link.open(file, std::ios::out | std::ios::trunc);
+        }
+        else
+        {
+            link.open(file, std::ios::in);
+        }
+
         if(!link.good())
         {
             perror("Could not open communication file: ");
@@ -74,6 +84,8 @@ namespace libsts::phy
 
     void FileBasedPhysicalLayer::write(const char *data, size_t len)
     {
+        if (direction != libsts::Direction::WRITE) throw libsts::BadDirectionException("Channel is not open for write");
+
         // Each byte becomes 8 "bits": 7 data bits (with the MSB of the byte = 0) and a parity bit
         auto stupidEncoding = new char[len * 8];
 
@@ -101,6 +113,8 @@ namespace libsts::phy
 
     size_t FileBasedPhysicalLayer::read(char *buff, size_t len)
     {
+        if (direction != libsts::Direction::READ) throw libsts::BadDirectionException("Channel is not open for read");
+
         // Each byte becomes 8 "bits": 7 data bits (with the MSB of the byte = 0) and a parity bit
         auto stupidEncoding = new char[len * 8];
 
@@ -134,6 +148,10 @@ namespace libsts::phy
 
     bool FileBasedPhysicalLayer::eof() {
         return link.eof();
+    }
+
+    libsts::Direction FileBasedPhysicalLayer::getDirection() {
+        return direction;
     }
 }
 

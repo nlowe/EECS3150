@@ -74,6 +74,7 @@ namespace libsts::link
             // Allocate a buffer for copying bytes into the frame buffer
             char buff[FRAME_MAX_LEN]{0};
             chunkSize = phy->read(buff, FRAME_MAX_LEN);
+
             frameBuffer.insert(frameBuffer.end(), std::begin(buff), std::end(buff));
 
             if(frameBuffer[0] != SYN) throw FramingException("Expected start-of-frame at byte " + std::to_string(dataBuffer.size()) + " but got " + std::to_string(frameBuffer[0]));
@@ -86,7 +87,7 @@ namespace libsts::link
             // Erase the frame we just decoded. If we didn't have a FRAME_MAX_LEN sized frame we have the starting part
             // of the next frame in the buffer left-over
             frameBuffer.erase(frameBuffer.begin(), frameBuffer.begin() + frameBuffer[1] + 3);
-        }while(!phy->eof());
+        }while(!phy->eof() && chunkSize > 0);
 
         // Specify the length and copy the data to a buffer to return
         len = dataBuffer.size();
