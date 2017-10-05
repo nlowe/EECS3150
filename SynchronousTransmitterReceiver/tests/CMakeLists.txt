@@ -103,3 +103,10 @@ add_test(
         "${CMAKE_CURRENT_SOURCE_DIR}/parity.sh"
         "${CMAKE_BINARY_DIR}/SynchronousTransmitterReceiver/client/client"
 )
+
+add_test(
+        SynchronousTransmitterReceiver::faulty-wire
+        ${BASH_PROGRAM}
+        "${CMAKE_CURRENT_SOURCE_DIR}/faulty-wire.sh"
+        "${CMAKE_BINARY_DIR}/SynchronousTransmitterReceiver/faulty-wire/faulty-wire"
+)
