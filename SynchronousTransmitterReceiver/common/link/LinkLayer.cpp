@@ -74,6 +74,7 @@ namespace libsts::link
             // Allocate a buffer for copying bytes into the frame buffer
             char buff[FRAME_MAX_LEN]{0};
             chunkSize = phy->read(buff, FRAME_MAX_LEN);
+            if(chunkSize == 0) break;
 
             frameBuffer.insert(frameBuffer.end(), std::begin(buff), std::end(buff));
 
