@@ -3,12 +3,24 @@
 
 namespace libsts
 {
+    /**
+     * The direction a channel is open in
+     */
     enum class Direction
     {
+        /**
+         * The channel is open for read
+         */
         READ,
+        /**
+         * The channel is open for write
+         */
         WRITE
     };
 
+    /**
+     * Signifies that the channel was not opened in the direction the operation was attempted
+     */
     class BadDirectionException : public std::runtime_error
     {
     public:

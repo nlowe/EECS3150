@@ -21,6 +21,13 @@ void printUsage()
     std::cout << R"(to the output file (or stdout) to be read by the "client" program)" << std::endl;
 }
 
+/**
+ * Read the specified file for processing
+ *
+ * @param in the file to read
+ * @param len set to the length of the file in bytes
+ * @return a char array containing the data read
+ */
 char* getFile(const std::string &in, size_t &len)
 {
     std::ifstream reader;
@@ -41,6 +48,12 @@ char* getFile(const std::string &in, size_t &len)
     return bytes;
 }
 
+/**
+ * Read all input from stdin
+ *
+ * @param len set to the length of the file in bytes
+ * @return a char array containing the data read
+ */
 char* getStdin(size_t &len)
 {
     std::cin >> std::noskipws;
@@ -55,6 +68,14 @@ char* getStdin(size_t &len)
     return data;
 }
 
+/**
+ * Encode the specified bytes to the link
+ *
+ * @param buff the bytes to encode
+ * @param len the number of bytes to encode
+ * @param out the output file to write to
+ * @return 0 for success, nonzero otherwise
+ */
 int processFile(const char* buff, size_t len, const std::string &out)
 {
     auto writer = libsts::link::CreateFileBasedWriter(out);

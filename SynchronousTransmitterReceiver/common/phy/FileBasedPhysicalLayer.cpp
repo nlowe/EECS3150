@@ -1,7 +1,6 @@
 #include <iostream>
 #include "FileBasedPhysicalLayer.h"
 #include "PhysicalLayerException.h"
-#include "../libsts.h"
 
 namespace libsts::phy
 {
@@ -52,6 +51,12 @@ namespace libsts::phy
         closed = true;
     }
 
+    /**
+     * Calculates the odd parity for the specified byte
+     *
+     * @param byte the byte to check
+     * @return '1' if the parity bit should be set, '0' otherwise
+     */
     inline const char calculateParity(uint8_t byte)
     {
         byte ^= byte >> 4;
@@ -61,11 +66,25 @@ namespace libsts::phy
         return ((~byte) & 1) == 1 ? '1' : '0';
     }
 
+    /**
+     * Encodes the specified bit in the provided byte to a '0' or '1'
+     *
+     * @param c the byte to encode from
+     * @param bit the bit to encode
+     * @return '1' if the specified bit in the byte was set, '0' otherwise
+     */
     inline const char encodebit(const char& c, uint8_t bit)
     {
         return (c & (1 << bit)) >> bit == 1 ? '1' : '0';
     }
 
+    /**
+     * Decode the specified bit
+     *
+     * @param c the "bit" to decode
+     * @param bit the position of the bit in the byte
+     * @return (1 << bit) if c == '1', 0 otherwise
+     */
     inline const uint8_t decodebit(const char& c, uint8_t bit)
     {
         if (c == '1')

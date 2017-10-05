@@ -21,6 +21,14 @@ void printUsage()
     std::cout << "from the input file to the output file or stdout if no output file is specified" << std::endl;
 }
 
+/**
+ * Decodes the specified file back to text
+ *
+ * @param in the file to decode
+ * @param len set to the length of the decoded text
+ * @return a char array contianing the decoded data. The callling
+ *         method is responsible for deleting the array
+ */
 char* decode(const std::string &in, size_t &len)
 {
     try
@@ -37,6 +45,13 @@ char* decode(const std::string &in, size_t &len)
     }
 }
 
+/**
+ * Decodes the specified file to the specified output file
+ *
+ * @param in the file to decode
+ * @param out the file to write the results to
+ * @return 0 for success, nonzero otherwise
+ */
 int processToFile(const std::string &in, const std::string &out)
 {
     size_t len;
@@ -64,6 +79,12 @@ int processToFile(const std::string &in, const std::string &out)
     return 0;
 }
 
+/**
+ * Decodes the specified file to standard output
+ *
+ * @param in the file to decode
+ * @return 0 for success, nonzero otherwise
+ */
 int processToStandardOut(const std::string &in)
 {
     size_t len;

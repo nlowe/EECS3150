@@ -1,7 +1,6 @@
 #ifndef SYNCHRONOUSTRANSMITTERRECEIVER_IPHYSICALLAYER_H
 #define SYNCHRONOUSTRANSMITTERRECEIVER_IPHYSICALLAYER_H
 
-
 #include <cstdint>
 #include <memory>
 #include "../libsts.h"

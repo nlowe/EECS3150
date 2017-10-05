@@ -53,6 +53,12 @@ namespace libsts::link
         bool closed = true;
     };
 
+    /**
+     * Create a Link Layer that uses a FileBasedPhysicalLayer for reading
+     *
+     * @param file the file to use for the phy
+     * @return a shared pointer to the constructed link layer
+     */
     std::shared_ptr<libsts::link::LinkLayer> CreateFileBasedReader(const std::string &file)
     {
         auto phy = std::make_shared<libsts::phy::FileBasedPhysicalLayer>(file, libsts::Direction::READ);
@@ -61,6 +67,12 @@ namespace libsts::link
         return link;
     }
 
+    /**
+     * Create a Link Layer that uses a FileBasedPhysicalLayer for writing
+     *
+     * @param file the file to use for the phy
+     * @return a shared pointer to the constructed link layer
+     */
     std::shared_ptr<libsts::link::LinkLayer> CreateFileBasedWriter(const std::string &file)
     {
         auto phy = std::make_shared<libsts::phy::FileBasedPhysicalLayer>(file, libsts::Direction::WRITE);

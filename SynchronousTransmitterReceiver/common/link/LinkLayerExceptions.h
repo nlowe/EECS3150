@@ -1,7 +1,3 @@
-//
-// Created by nathan on 10/3/17.
-//
-
 #ifndef SYNCHRONOUSTRANSMITTERRECEIVER_LINKLAYEREXCEPTIONS_H
 #define SYNCHRONOUSTRANSMITTERRECEIVER_LINKLAYEREXCEPTIONS_H
 
@@ -9,6 +5,9 @@
 
 namespace libsts::link
 {
+    /**
+     * An exception thrown in the link layer
+     */
     class LinkException : public std::runtime_error
     {
     public:
@@ -16,6 +15,9 @@ namespace libsts::link
 
     };
 
+    /**
+     * An exeption thrown during the framing or de-framing process
+     */
     class FramingException : public LinkException
     {
     public:

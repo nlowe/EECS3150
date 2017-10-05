@@ -19,6 +19,13 @@ void printUsage()
     std::cout << R"(The file must be comprised of only "0" and "1" characters)" << std::endl;
 }
 
+/**
+ * Read the specified file for processing
+ *
+ * @param in the file to read
+ * @param len set to the length of the file in bytes
+ * @return a char array containing the data read
+ */
 char* getFile(const std::string &in, size_t &len)
 {
     std::ifstream reader;
@@ -39,6 +46,12 @@ char* getFile(const std::string &in, size_t &len)
     return bytes;
 }
 
+/**
+ * Read all input from stdin
+ *
+ * @param len set to the length of the file in bytes
+ * @return a char array containing the data read
+ */
 char* getStdin(size_t &len)
 {
     std::cin >> std::noskipws;
@@ -53,6 +66,15 @@ char* getStdin(size_t &len)
     return data;
 }
 
+/**
+ * Flip an arbitrary number of "bits" in the input file
+ *
+ * @param in the input file to read from. Use "-" for stdin
+ *           The file is modified in-place. If stdin is used,
+ *           the output is written to stdout
+ * @param bits the number of bits to flip
+ * @return 0 for success, nonzero otherwise
+ */
 int flipAndFlush(const std::string &in, size_t bits)
 {
     size_t len = 0;
