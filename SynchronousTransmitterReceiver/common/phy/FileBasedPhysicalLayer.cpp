@@ -116,7 +116,7 @@ namespace libsts::phy
         if (direction != libsts::Direction::READ) throw libsts::BadDirectionException("Channel is not open for read");
 
         // Each byte becomes 8 "bits": 7 data bits (with the MSB of the byte = 0) and a parity bit
-        auto stupidEncoding = new char[len * 8];
+        auto stupidEncoding = new char[len * 8]{0};
 
         link.read(stupidEncoding, len * 8);
         auto bitlen = link.gcount();

@@ -75,7 +75,10 @@ int processToStandardOut(const std::string &in)
         return ERR_INPUT;
     }
 
-    std::cout << buff << std::endl;
+    std::string sanity(buff);
+    sanity = sanity.substr(0, len);
+
+    std::cout << sanity << std::endl;
 
     delete[] buff;
 
