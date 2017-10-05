@@ -17,7 +17,7 @@ void printUsage()
     std::cout << R"(    <input>|-    The file to "serve". If "-" read from stdin instead)" << std::endl;
     std::cout << R"(    [output]   The file "socket" to serve on. If blank, write to stdout)" << std::endl;
     std::cout << std::endl;
-    std::cout << R"("Serves" the specified file by encoding bytes with parity and virtual framing)";
+    std::cout << R"("Serves" the specified file by encoding bytes with parity and virtual framing )";
     std::cout << R"(to the output file (or stdout) to be read by the "client" program)" << std::endl;
 }
 

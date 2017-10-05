@@ -17,7 +17,7 @@ void printUsage()
     std::cout << R"(    <input>|-   The file to "download". If "-" read from stdin instead)" << std::endl;
     std::cout <<   "    [output]  The file write to. If blank, write to stdout" << std::endl;
     std::cout << std::endl;
-    std::cout << R"("Downloads" the specified file by decoding bytes with parity and virtual framing)";
+    std::cout << R"("Downloads" the specified file by decoding bytes with parity and virtual framing )";
     std::cout << "from the input file to the output file or stdout if no output file is specified" << std::endl;
 }
 
