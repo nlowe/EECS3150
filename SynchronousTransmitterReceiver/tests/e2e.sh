@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if (( $# != 3 )); then
-    echo "Syntax: ./e2e.sh <path to client> <path to server>"
+    echo "Syntax: ./e2e.sh <path to client> <path to server> <len>"
 fi
 
 CLIENT=$1

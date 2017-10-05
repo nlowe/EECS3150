@@ -96,3 +96,10 @@ add_test(
         "${CMAKE_BINARY_DIR}/SynchronousTransmitterReceiver/server/server"
         "222"
 )
+
+add_test(
+        SynchronousTransmitterReceiver::parity
+        ${BASH_PROGRAM}
+        "${CMAKE_CURRENT_SOURCE_DIR}/parity.sh"
+        "${CMAKE_BINARY_DIR}/SynchronousTransmitterReceiver/client/client"
+)
