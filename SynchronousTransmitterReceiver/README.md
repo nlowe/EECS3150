@@ -10,7 +10,10 @@ only accepts as input bytes from `0x00` to `0x7F` to conform with the project sp
 
 | Byte 0 | Byte 1 | Bytes 2..`<len>` | Byte 2 + `<len>` + 1 |
 | ------ | ------ | ---------------- | -------------------- |
-| `0x16` | Payload Length in bytes (`<len>`) | Payload bytes ( each bit in the byte is expanded into a `'0'` or `'1'` with the MSB in the data byte overwritten with a parity bit) | `0x16` |
+| `0x16` | Payload Length in bytes (`<len>`) | Payload bytes | `0x16` |
+
+The seven least-significant bits in each byte in the frame are expanded into an ascii '0' or '1'. The most-significant
+bit is replaced with an odd-parity bit.
 
 To test parity, you can optionally pass the data through the `faulty-wire` program to flip one or more "bits"
 before handing off the data to the "client".

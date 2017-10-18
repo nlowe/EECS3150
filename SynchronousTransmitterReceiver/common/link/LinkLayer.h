@@ -1,7 +1,6 @@
 #ifndef SYNCHRONOUSTRANSMITTERRECEIVER_LINKLAYER_H
 #define SYNCHRONOUSTRANSMITTERRECEIVER_LINKLAYER_H
 
-
 #include <memory>
 #include <utility>
 #include "../phy/IPhysicalLayer.h"
@@ -81,6 +80,5 @@ namespace libsts::link
         return link;
     }
 }
-
 
 #endif //SYNCHRONOUSTRANSMITTERRECEIVER_LINKLAYER_H

@@ -173,4 +173,3 @@ namespace libsts::phy
         return direction;
     }
 }
-
