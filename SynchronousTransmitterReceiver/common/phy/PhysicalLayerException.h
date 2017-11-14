@@ -14,6 +14,18 @@ namespace libsts::phy
         explicit PhysicalLayerException(const std::string &__arg) : runtime_error(__arg) {}
     };
 
+    class BindException: public PhysicalLayerException
+    {
+    public:
+        explicit BindException(const std::string &__arg) : PhysicalLayerException(__arg) {}
+    };
+
+    class IOException: public PhysicalLayerException
+    {
+    public:
+        explicit IOException(const std::string &__arg) : PhysicalLayerException(__arg) {}
+    };
+
     /**
      * A bad encoding was passed to the physical layer
      */

@@ -15,7 +15,8 @@ namespace libsts
         /**
          * The channel is open for write
          */
-        WRITE
+        WRITE,
+        BOTH
     };
 
     /**

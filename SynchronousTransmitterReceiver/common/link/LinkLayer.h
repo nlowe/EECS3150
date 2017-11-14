@@ -5,6 +5,9 @@
 #include <utility>
 #include "../phy/IPhysicalLayer.h"
 #include "../phy/FileBasedPhysicalLayer.h"
+#include "../phy/NetworkBasedPhysicalLayer.h"
+#include <vector>
+#include "ErrorCorrectionType.h"
 
 /**
  * An abstraction representing the link layer in the OSI Network Model
@@ -47,9 +50,20 @@ namespace libsts::link
             return phy->getDirection();
         }
 
+        ErrorCorrectionType getErrorCorrectionType() const;
+
+        void setErrorCorrectionType(ErrorCorrectionType errorCorrectionType);
+
     private:
         std::shared_ptr<libsts::phy::IPhysicalLayer> phy{};
         bool closed = true;
+        ErrorCorrectionType errorCorrectionType = ErrorCorrectionType::HAMMING;
+
+        void writeCRC(const char* buff, size_t len);
+        void writeHamming(const char* buff, size_t len);
+
+        bool readFrameCRC(size_t chunkSize, std::vector<char>& data, std::vector<char>& frame);
+        bool readFrameHamming(size_t chunkSize, std::vector<char>& data, std::vector<char>& frame);
     };
 
     /**
@@ -75,6 +89,22 @@ namespace libsts::link
     std::shared_ptr<libsts::link::LinkLayer> CreateFileBasedWriter(const std::string &file)
     {
         auto phy = std::make_shared<libsts::phy::FileBasedPhysicalLayer>(file, libsts::Direction::WRITE);
+        auto link = std::make_shared<libsts::link::LinkLayer>(phy);
+
+        return link;
+    }
+
+    std::shared_ptr<libsts::link::LinkLayer> CreateServer(const uint16_t port)
+    {
+        auto phy = std::make_shared<libsts::phy::NetworkBasedPhysicalLayer>(port);
+        auto link = std::make_shared<libsts::link::LinkLayer>(phy);
+
+        return link;
+    }
+
+    std::shared_ptr<libsts::link::LinkLayer> CreateClient(const std::string &server, const uint16_t port)
+    {
+        auto phy = std::make_shared<libsts::phy::NetworkBasedPhysicalLayer>(server, port);
         auto link = std::make_shared<libsts::link::LinkLayer>(phy);
 
         return link;

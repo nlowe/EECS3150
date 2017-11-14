@@ -1,6 +1,7 @@
 #include <iostream>
 #include "FileBasedPhysicalLayer.h"
 #include "PhysicalLayerException.h"
+#include "StupidEncoding.h"
 
 namespace libsts::phy
 {
@@ -51,82 +52,16 @@ namespace libsts::phy
         closed = true;
     }
 
-    /**
-     * Calculates the odd parity for the specified byte
-     *
-     * @param byte the byte to check
-     * @return '1' if the parity bit should be set, '0' otherwise
-     */
-    inline const char calculateParity(uint8_t byte)
-    {
-        byte ^= byte >> 4;
-        byte ^= byte >> 2;
-        byte ^= byte >> 1;
-
-        return ((~byte) & 1) == 1 ? '1' : '0';
-    }
-
-    /**
-     * Encodes the specified bit in the provided byte to a '0' or '1'
-     *
-     * @param c the byte to encode from
-     * @param bit the bit to encode
-     * @return '1' if the specified bit in the byte was set, '0' otherwise
-     */
-    inline const char encodebit(const char& c, uint8_t bit)
-    {
-        return (c & (1 << bit)) >> bit == 1 ? '1' : '0';
-    }
-
-    /**
-     * Decode the specified bit
-     *
-     * @param c the "bit" to decode
-     * @param bit the position of the bit in the byte
-     * @return (1 << bit) if c == '1', 0 otherwise
-     */
-    inline const uint8_t decodebit(const char& c, uint8_t bit)
-    {
-        if (c == '1')
-        {
-            return static_cast<const uint8_t>(1 << bit);
-        }
-        else if(c == '0')
-        {
-            return 0;
-        }
-        else
-        {
-            throw IllegalEncodingException("Expected a '1' or '0' but got a " + std::to_string(c));
-        }
-    }
 
     void FileBasedPhysicalLayer::write(const char *data, size_t len)
     {
         if (direction != libsts::Direction::WRITE) throw libsts::BadDirectionException("Channel is not open for write");
 
-        // Each byte becomes 8 "bits": 7 data bits (with the MSB of the byte = 0) and a parity bit
-        auto stupidEncoding = new char[len * 8];
-
-        for(auto i = 0; i < len; i++)
-        {
-            auto byte = reinterpret_cast<uint8_t&>(const_cast<char&>(data[i]));
-
-            if(byte & 0x80) throw IllegalEncodingException("This project only supports 7-bit ascii");
-            byte &= 0x7f;
-
-            stupidEncoding[(i * 8) + 0] = encodebit(byte, 0);
-            stupidEncoding[(i * 8) + 1] = encodebit(byte, 1);
-            stupidEncoding[(i * 8) + 2] = encodebit(byte, 2);
-            stupidEncoding[(i * 8) + 3] = encodebit(byte, 3);
-            stupidEncoding[(i * 8) + 4] = encodebit(byte, 4);
-            stupidEncoding[(i * 8) + 5] = encodebit(byte, 5);
-            stupidEncoding[(i * 8) + 6] = encodebit(byte, 6);
-            stupidEncoding[(i * 8) + 7] = calculateParity(byte);
-        }
+        size_t res;
+        auto stupidEncoding = libsts::phy::StupidEncoding::expandBitsToBytes(data, len, res);
 
         // Write the expanded bits to the stream
-        link.write(stupidEncoding, len * 8);
+        link.write(stupidEncoding, res);
         delete[] stupidEncoding;
     }
 
@@ -134,33 +69,15 @@ namespace libsts::phy
     {
         if (direction != libsts::Direction::READ) throw libsts::BadDirectionException("Channel is not open for read");
 
-        // Each byte becomes 8 "bits": 7 data bits (with the MSB of the byte = 0) and a parity bit
-        auto stupidEncoding = new char[len * 8]{0};
-
+        auto stupidEncoding = new char[len * 8];
         link.read(stupidEncoding, len * 8);
-        auto bitlen = link.gcount();
-        auto realLen = static_cast<size_t>(bitlen / 8);
 
-        for(auto i = 0; i < realLen; i++)
-        {
-            uint8_t byte = 0;
+        size_t realLen;
+        auto decoded = libsts::phy::StupidEncoding::collapseBytesToBits(stupidEncoding, len * 8, realLen);
 
-            byte |= decodebit(stupidEncoding[(i * 8) + 0], 0);
-            byte |= decodebit(stupidEncoding[(i * 8) + 1], 1);
-            byte |= decodebit(stupidEncoding[(i * 8) + 2], 2);
-            byte |= decodebit(stupidEncoding[(i * 8) + 3], 3);
-            byte |= decodebit(stupidEncoding[(i * 8) + 4], 4);
-            byte |= decodebit(stupidEncoding[(i * 8) + 5], 5);
-            byte |= decodebit(stupidEncoding[(i * 8) + 6], 6);
+        std::copy(decoded, decoded + realLen, buff);
 
-            if(calculateParity(byte) != stupidEncoding[(i * 8) + 7])
-            {
-                throw ParityCheckFailure("Parity check failed for byte " + std::to_string(i));
-            }
-
-            buff[i] = byte;
-        }
-
+        delete[] decoded;
         delete[] stupidEncoding;
         return realLen;
     }

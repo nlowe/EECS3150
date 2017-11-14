@@ -1,0 +1,17 @@
+//
+// Created by nathan on 11/12/17.
+//
+
+#ifndef SYNCHRONOUSTRANSMITTERRECEIVER_ERRORCORRECTIONTYPE_H
+#define SYNCHRONOUSTRANSMITTERRECEIVER_ERRORCORRECTIONTYPE_H
+
+namespace libsts::link
+{
+    enum class ErrorCorrectionType
+    {
+        CRC_ANSI_16,
+        HAMMING
+    };
+}
+
+#endif //SYNCHRONOUSTRANSMITTERRECEIVER_ERRORCORRECTIONTYPE_H

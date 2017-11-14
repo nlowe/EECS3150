@@ -10,7 +10,7 @@
 
 void printUsage()
 {
-    std::cout << "client <input>|- [output]" << std::endl;
+    std::cout << "networkClient <input>|- [output]" << std::endl;
     std::cout << std::endl;
     std::cout << "Arguments:" << std::endl;
     std::cout << std::endl;
