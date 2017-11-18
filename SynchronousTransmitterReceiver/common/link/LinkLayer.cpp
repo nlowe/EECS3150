@@ -222,7 +222,8 @@ namespace libsts::link
 
         // Specify the length and copy the data to a buffer to return
         len = dataBuffer.size();
-        auto buff = new char[dataBuffer.size()];
+        // Don't forget to terminate the string
+        auto buff = new char[dataBuffer.size() + 1]{0};
 
         std::copy(dataBuffer.begin(), dataBuffer.end(), buff);
         return buff;
