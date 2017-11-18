@@ -7,7 +7,6 @@
 #define ERR_INPUT  2
 #define ERR_OUTPUT 3
 
-#define BUFF_SIZE 65536
 
 void printUsage()
 {
@@ -58,17 +57,17 @@ int main(int argc, char* argv[])
                 link->open();
                 link->setErrorCorrectionType(errorCorrectionType);
 
-                std::vector<char> data;
-
-                size_t len;
+                size_t len = 0;
                 char* buff = link->readAll(len);
-                std::copy(buff, buff + len, std::back_inserter(data));
 
-                std::cout << std::string(buff).substr(len);
+                std::cout << buff << std::endl;
+                delete[] buff;
 
-                std::string response = "Received " + std::to_string(data.size()) + " bytes of data";
+                std::string response = "Received " + std::to_string(len) + " bytes of data";
                 link->write(response.c_str(), response.length());
                 link->close();
+
+                return 0;
             }
             catch(std::exception &ex)
             {

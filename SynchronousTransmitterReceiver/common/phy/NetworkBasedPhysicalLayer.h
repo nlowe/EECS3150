@@ -38,9 +38,7 @@ namespace libsts::phy
         }
 
         void waitForConnection();
-
-        bool isClientPhy() { return remote.empty(); }
-        bool isServerPhy() { return !isClientPhy(); }
+        
         bool eof() override;
         Direction getDirection() override;
 

@@ -43,10 +43,21 @@ uint16_t crc16ansi(const char* payload, size_t len)
     uint16_t remainder = 0xFFFF;
     for(auto i = 0; i < len; i++)
     {
-        remainder = lookup[(remainder & 0xff) & reinterpret_cast<uint8_t&>(const_cast<char&>(payload[i]))] ^ (remainder >> 8);
+        remainder = lookup[(remainder ^ (reinterpret_cast<uint8_t&>(const_cast<char&>(payload[i])))) & 0xff] ^ (remainder >> 8);
     }
 
-    return ~remainder;
+    return remainder;
+}
+
+uint16_t crc16ansi(const std::vector<char>& payload, size_t len, size_t off)
+{
+    uint16_t remainder = 0xFFFF;
+    for(auto i = 0; i < len; i++)
+    {
+        remainder = lookup[(remainder ^ (reinterpret_cast<uint8_t&>(const_cast<char&>(payload[i + off])))) & 0xff] ^ (remainder >> 8);
+    }
+
+    return remainder;
 }
 
 #endif //SYNCHRONOUSTRANSMITTERRECEIVER_CRC_16_ANSI_H

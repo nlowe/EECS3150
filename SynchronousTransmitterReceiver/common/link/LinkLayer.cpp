@@ -105,26 +105,49 @@ namespace libsts::link
         }
 
         // Also send ETB
-        char FinalFrame[] = {SYN, 1, ETB, SYN};
+        char FinalFrame[] = {ETB};
         switch(getErrorCorrectionType())
         {
-            case ErrorCorrectionType::CRC_ANSI_16: writeCRC(FinalFrame, 4); break;
-            case ErrorCorrectionType::HAMMING: writeHamming(FinalFrame, 4); break;
+            case ErrorCorrectionType::CRC_ANSI_16: writeCRC(FinalFrame, 1); break;
+            case ErrorCorrectionType::HAMMING: writeHamming(FinalFrame, 1); break;
         }
     }
 
     bool LinkLayer::readFrameCRC(size_t chunkSize, std::vector<char>& data, std::vector<char>& frame)
     {
-        // TODO: Correct offset
-        if(frame[4 + frame[1]] != SYN) throw FramingException("Expected end-of-frame at byte " + std::to_string(data.size() + chunkSize) + " but got " + std::to_string(frame[4 + frame[1]]));
+        // We may have gotten multiple frames in a single read from the phy
+        bool isFinalFrameInBlock = false;
+        while(!frame.empty() && frame.size() >= frame[1] + 5)
+        {
+            auto framePayloadSize = static_cast<size_t>(frame[1]);
+            if(frame[4 + framePayloadSize] != SYN)
+            {
+                throw FramingException("Expected end-of-frame at byte " + std::to_string(data.size() + chunkSize) + " but got " + std::to_string(frame[4 + framePayloadSize]));
+            }
 
-        
+            auto crc = crc16ansi(frame, framePayloadSize, 2);
+            auto expectedCRC = (static_cast<uint8_t>(frame[2 + framePayloadSize]) << 8) | (static_cast<uint8_t>(frame[3+framePayloadSize]));
+            isFinalFrameInBlock = framePayloadSize == 1 && frame[2] == ETB;
 
-        // Erase the frame we just decoded. If we didn't have a FRAME_MAX_LEN_CRC sized frame we have the starting part
-        // of the next frame in the buffer left-over
-        frame.erase(frame.begin(), frame.begin() + frame[1] + 5);
-        return false;
+            if(crc != expectedCRC)
+            {
+                throw libsts::link::LinkException("CRC Checksum Mismatch. Got " + std::to_string(crc) + " but was expecting " + std::to_string(expectedCRC));
+            }
+            else if(!isFinalFrameInBlock)
+            {
+                std::copy(std::begin(frame) + 2, std::begin(frame) + 2 + framePayloadSize, std::back_inserter(data));
 
+                // Erase the frame we just decoded. If we didn't have a FRAME_MAX_LEN_CRC sized frame we have the starting part
+                // of the next frame in the buffer left-over
+                frame.erase(frame.begin(), frame.begin() + framePayloadSize + 5);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return isFinalFrameInBlock;
     }
 
     bool LinkLayer::readFrameHamming(size_t chunkSize, std::vector<char>& data, std::vector<char>& frame)
@@ -145,7 +168,7 @@ namespace libsts::link
         std::vector<char> frameBuffer;
         frameBuffer.reserve(2 * FRAME_MAX_LEN_CRC);
 
-        bool isFinalFrameInBlock = false;
+        bool isFinalFrameInBlock;
         size_t chunkSize = 0;
         do
         {
@@ -155,7 +178,7 @@ namespace libsts::link
             chunkSize = phy->read(buff, FRAME_MAX_LEN_HAMMING);
             if(chunkSize == 0) break;
 
-            frameBuffer.insert(frameBuffer.end(), std::begin(buff), std::end(buff));
+            frameBuffer.insert(frameBuffer.end(), std::begin(buff), std::begin(buff) + chunkSize);
 
             if(frameBuffer[0] != SYN) throw FramingException("Expected start-of-frame at byte " + std::to_string(dataBuffer.size()) + " but got " + std::to_string(frameBuffer[0]));
 

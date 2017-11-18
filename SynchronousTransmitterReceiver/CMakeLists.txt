@@ -3,7 +3,6 @@ project(SynchronousTransmitterReceiver)
 
 add_subdirectory(common)
 add_subdirectory(networkClient)
-add_subdirectory(faulty-wire)
 add_subdirectory(networkServer)
 
 #need to rewrite tests for network-based-phy

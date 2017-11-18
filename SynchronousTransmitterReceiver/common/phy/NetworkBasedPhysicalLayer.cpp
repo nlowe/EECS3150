@@ -42,6 +42,8 @@ void libsts::phy::NetworkBasedPhysicalLayer::waitForConnection()
     struct sockaddr_storage remoteAddr{};
     socklen_t sin_size = sizeof remoteAddr;
 
+    std::cout << "Waiting for connection on port " << port << std::endl;
+
     mySock = accept(listenSock, reinterpret_cast<sockaddr *>(&remoteAddr), &sin_size);
     if (mySock == -1)
     {
@@ -58,7 +60,7 @@ void libsts::phy::NetworkBasedPhysicalLayer::waitForConnection()
             INET6_ADDRSTRLEN
     );
 
-    std::cout << s << " connected";
+    std::cout << s << " connected" << std::endl;
 }
 
 void libsts::phy::NetworkBasedPhysicalLayer::open_client()
@@ -78,16 +80,11 @@ void libsts::phy::NetworkBasedPhysicalLayer::open_client()
 
     for(p = servinfo; p != nullptr; p = p->ai_next)
     {
-        if ((mySock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
-        {
-            std::cout << "Failed to create client socket: " << strerror(errno) << std::endl;
-            continue;
-        }
+        if ((mySock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) continue;
 
         if (connect(mySock, p->ai_addr, p->ai_addrlen) == -1)
         {
             close_sock(mySock);
-            std::cout << "Failed to connect to remote: " << strerror(errno) << std::endl;
             continue;
         }
 
@@ -179,21 +176,13 @@ size_t libsts::phy::NetworkBasedPhysicalLayer::read(char *buff, size_t len)
 {
     if(mySock == -1) waitForConnection();
 
-    size_t remaining = len;
-    size_t off = 0;
-    ssize_t  res;
-    while((res = recv(mySock, buff + off, remaining, 0)) != 0)
+    ssize_t res = 0;
+    if((res = recv(mySock, buff, len, 0)) == -1)
     {
-        if(res == -1)
-        {
-            throw libsts::phy::IOException("Failed to receive: " + std::string(strerror(errno)));
-        }
-
-        remaining -= res;
-        off += res;
+        throw libsts::phy::IOException("Failed to receive: " + std::string(strerror(errno)));
     }
 
-    return len - remaining;
+    return static_cast<size_t>(res);
 }
 
 uint32_t libsts::phy::NetworkBasedPhysicalLayer::flush()
