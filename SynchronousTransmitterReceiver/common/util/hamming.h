@@ -1,7 +1,3 @@
-//
-// Created by nathan on 11/12/17.
-//
-
 #ifndef SYNCHRONOUSTRANSMITTERRECEIVER_HAMMING_H
 #define SYNCHRONOUSTRANSMITTERRECEIVER_HAMMING_H
 
@@ -9,11 +5,14 @@
 
 #include <cstdint>
 
+inline int bitsel(uint16_t opt, uint8_t bit)
+{
+    return (opt & (1 << bit)) >> bit;
+}
+
 uint16_t hammingEncode(const char byte)
 {
     // MSB of each byte is reserved for parity
-    uint16_t result = reinterpret_cast<uint8_t&>(const_cast<char&>(byte));
-
     // for simplicity, we just do hamming 7-4 twice which still allows
     // us to do an overall parity bit
 
@@ -29,25 +28,57 @@ uint16_t hammingEncode(const char byte)
     // /\       /\                /\
     // parity  padding            parity
 
-    result = static_cast<uint16_t>(((result & 0x70) << 4) & HAMMING_DATA_MASK);
+    // Move data bits around
+    auto result = static_cast<uint16_t>(
+        (
+            (byte & 0x80) << 6 |
+            (byte & 0x70) << 4 |
+            (byte & 0x08) << 1 |
+            (byte & 0x7)
+        )
+        & HAMMING_DATA_MASK
+    );
+
 
     // low byte hamming
-    result |= ((result & 1 << 2) ^ (result & 1 << 1) ^ (result & 1)) << 3;
-    result |= ((result & 1 << 4) ^ (result & 1 << 1) ^ (result & 1)) << 5;
-    result |= ((result & 1 << 4) ^ (result & 1 << 2) ^ (result & 1)) << 6;
+    result |= (bitsel(result, 2) ^ bitsel(result, 1) ^ bitsel(result, 0)) << 3; // p4
+    result |= (bitsel(result, 4) ^ bitsel(result, 1) ^ bitsel(result, 0)) << 5; // p2
+    result |= (bitsel(result, 4) ^ bitsel(result, 2) ^ bitsel(result, 0)) << 6; // p1
 
     // high byte hamming
-    result |= ((result & 1 << 10) ^ (result & 1 <<  9) ^ (result & 1 << 8)) << 11;
-    result |= ((result & 1 << 12) ^ (result & 1 <<  9) ^ (result & 1 << 8)) << 13;
-    result |= ((result & 1 << 12) ^ (result & 1 << 10) ^ (result & 1 << 8)) << 14;
+    result |= (bitsel(result, 10) ^ bitsel(result,  9) ^ bitsel(result, 8)) << 11; // p4
+    result |= (bitsel(result, 12) ^ bitsel(result,  9) ^ bitsel(result, 8)) << 13; // p2
+    result |= (bitsel(result, 12) ^ bitsel(result, 10) ^ bitsel(result, 8)) << 14; // p1
 
     return result;
 }
 
-uint8_t hammingDecode(uint16_t byte)
+uint8_t hammingCorrect(const char byte)
 {
-    // TODO: implement
-    return 0;
+    // 07 06 05 04 03 02 01 00
+    // 00 00 00 00 d3 d2 d1 d0
+    //
+    //       expands to
+    //
+    // __ p1 p2 d3 p4 d2 d1 d0
+    // xx    xx    xx    xx
+    //       xx xx       xx xx
+    //             xx xx xx xx
+    // /\
+    // parity
+    // TODO: Implement
+    return static_cast<uint8_t>(byte & 0b00010111);
+}
+
+uint8_t hammingDecode(const char highByte, const char lowByte)
+{
+    auto correctedHighByte = hammingCorrect(highByte);
+    auto correctedLowByte  = hammingCorrect(lowByte);
+
+    return static_cast<uint8_t>(
+        (correctedHighByte & 0x10) << 3 | (correctedHighByte & 0x07) << 4 |
+        (correctedLowByte  & 0x10) >> 1 | (correctedLowByte  & 0x07)
+    );
 }
 
 #endif //SYNCHRONOUSTRANSMITTERRECEIVER_HAMMING_H

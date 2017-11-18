@@ -67,19 +67,18 @@ namespace libsts::link
         frame[0] = SYN;
         frame[1] = reinterpret_cast<uint8_t&>(len);
 
-        auto i = 0;
-        do
+        for(auto i = 0; i < len; i++)
         {
             auto hamming = hammingEncode(buff[i]);
-            frame[2 + i++] = static_cast<uint8_t>(hamming >> 8);
-            frame[2 + i++] = static_cast<uint8_t>(hamming & 0xff);
-        }while(i/2 < len);
+            frame[2 + 2 * i] = static_cast<char>(hamming >> 8);
+            frame[2 + 2 * i + 1] = static_cast<char>(hamming & 0xff);
+        };
 
-        frame[2 + i++] = SYN;
+        frame[2 + 2 * len] = SYN;
 
         try
         {
-            phy->write(frame, 2 + i);
+            phy->write(frame, 3 + 2 * len);
         }
         catch(std::exception &ex)
         {
@@ -120,7 +119,11 @@ namespace libsts::link
         while(!frame.empty() && frame.size() >= frame[1] + 5)
         {
             auto framePayloadSize = static_cast<size_t>(frame[1]);
-            if(frame[4 + framePayloadSize] != SYN)
+            if(frame[0] != SYN)
+            {
+                throw FramingException("Expected start-of-frame");
+            }
+            else if(frame[4 + framePayloadSize] != SYN)
             {
                 throw FramingException("Expected end-of-frame at byte " + std::to_string(data.size() + chunkSize) + " but got " + std::to_string(frame[4 + framePayloadSize]));
             }
@@ -152,14 +155,41 @@ namespace libsts::link
 
     bool LinkLayer::readFrameHamming(size_t chunkSize, std::vector<char>& data, std::vector<char>& frame)
     {
-        // TODO: Correct offset
-        if(frame[2 + frame[1] * 2] != SYN) throw FramingException("Expected end-of-frame at byte " + std::to_string(data.size() + chunkSize) + " but got " + std::to_string(frame[2 + 2 * frame[1]]));
+        // We may have gotten multiple frames in a single read from the phy
+        bool isFinalFrameInBlock = false;
+        while(!frame.empty() && frame.size() >= frame[1] * 2 + 3)
+        {
+            auto framePayloadSize = static_cast<size_t>(frame[1]);
+            auto frameEncodedSize = 2 * framePayloadSize;
+            if(frame[0] != SYN)
+            {
+                throw FramingException("Expected start-of-frame");
+            }
+            else if(frame[2 + frameEncodedSize] != SYN)
+            {
+                throw FramingException("Expected end-of-frame at byte " + std::to_string(data.size() + chunkSize) + " but got " + std::to_string(frame[4 + framePayloadSize]));
+            }
 
+            for(auto i = 0; i < frameEncodedSize; i += 2)
+            {
+                auto byte = static_cast<char>(hammingDecode(frame[2 + i], frame[2 + i + 1]));
+                if(!(isFinalFrameInBlock = byte == ETB))
+                {
+                    data.insert(data.end(), byte);
+                }
+            }
 
-        // Erase the frame we just decoded. If we didn't have a FRAME_MAX_LEN_HAMMING sized frame we have the starting part
-        // of the next frame in the buffer left-over
-        frame.erase(frame.begin(), frame.begin() + frame[1] * 2 + 3);
-        return false;
+            if(!isFinalFrameInBlock)
+            {
+                frame.erase(frame.begin(), frame.begin() + 3 + frameEncodedSize);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return isFinalFrameInBlock;
     }
 
     char* LinkLayer::readAll(size_t &len)
