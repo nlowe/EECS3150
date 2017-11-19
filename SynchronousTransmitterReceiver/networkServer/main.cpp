@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
                 size_t len = 0;
                 char* buff = link->readAll(len);
 
-                std::cout << buff << std::endl;
+                std::cout << buff;
                 delete[] buff;
 
                 std::string response = "Received " + std::to_string(len) + " bytes of data";

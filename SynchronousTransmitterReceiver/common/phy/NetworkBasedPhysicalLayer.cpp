@@ -42,7 +42,7 @@ void libsts::phy::NetworkBasedPhysicalLayer::waitForConnection()
     struct sockaddr_storage remoteAddr{};
     socklen_t sin_size = sizeof remoteAddr;
 
-    std::cout << "Waiting for connection on port " << port << std::endl;
+    std::cerr << "Waiting for connection on port " << port << std::endl;
 
     mySock = accept(listenSock, reinterpret_cast<sockaddr *>(&remoteAddr), &sin_size);
     if (mySock == -1)
@@ -60,7 +60,7 @@ void libsts::phy::NetworkBasedPhysicalLayer::waitForConnection()
             INET6_ADDRSTRLEN
     );
 
-    std::cout << s << " connected" << std::endl;
+    std::cerr << s << " connected" << std::endl;
 }
 
 void libsts::phy::NetworkBasedPhysicalLayer::open_client()
@@ -98,7 +98,7 @@ void libsts::phy::NetworkBasedPhysicalLayer::open_client()
 
     inet_ntop(p->ai_family, getInAddr(p->ai_addr), s, INET6_ADDRSTRLEN);
 
-    std::cout << "Connected to " << s << std::endl;
+    std::cerr << "Connected to " << s << std::endl;
     freeaddrinfo(servinfo);
 }
 
@@ -123,7 +123,7 @@ void libsts::phy::NetworkBasedPhysicalLayer::open_server()
     {
         if ((listenSock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
         {
-            std::cout << "Failed to create server socket: " << strerror(errno) << std::endl;
+            std::cerr << "Failed to create server socket: " << strerror(errno) << std::endl;
             continue;
         }
 
@@ -135,7 +135,7 @@ void libsts::phy::NetworkBasedPhysicalLayer::open_server()
         if (bind(listenSock, p->ai_addr, p->ai_addrlen) == -1)
         {
             close_sock(listenSock);
-            std::cout << "Failed to bind server socket: " << strerror(errno) << std::endl;
+            std::cerr << "Failed to bind server socket: " << strerror(errno) << std::endl;
             continue;
         }
 
