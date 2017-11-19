@@ -5,7 +5,8 @@
 
 #include <cstdint>
 
-inline int bitsel(uint16_t opt, uint8_t bit)
+template <class T>
+inline int bitsel(T opt, uint8_t bit)
 {
     return (opt & (1 << bit)) >> bit;
 }
@@ -61,13 +62,24 @@ uint8_t hammingCorrect(const char byte)
     //       expands to
     //
     // __ p1 p2 d3 p4 d2 d1 d0
-    // xx    xx    xx    xx
+    //    xx    xx    xx    xx
     //       xx xx       xx xx
     //             xx xx xx xx
     // /\
     // parity
-    // TODO: Implement
-    return static_cast<uint8_t>(byte & 0b00010111);
+
+    auto c = (bitsel(byte, 6) ^ bitsel(byte, 4) ^ bitsel(byte, 2) ^ bitsel(byte, 0)) |
+             (bitsel(byte, 5) ^ bitsel(byte, 4) ^ bitsel(byte, 1) ^ bitsel(byte, 0)) << 1 |
+             (bitsel(byte, 3) ^ bitsel(byte, 2) ^ bitsel(byte, 1) ^ bitsel(byte, 0)) << 2;
+
+    auto result = byte;
+
+    if (c != 0)
+    {
+        result ^= 1 << (8 - c - 1);
+    }
+
+    return static_cast<uint8_t>(result & 0b00010111);
 }
 
 uint8_t hammingDecode(const char highByte, const char lowByte)
