@@ -5,12 +5,27 @@
 
 #include <cstdint>
 
+/**
+ * Select the specified bit
+ *
+ * @tparam T the integer type
+ * @param opt the argument to extract the specified bit from
+ * @param bit the bit position to extract
+ * @return the specified bit shifted down to the least significant bit
+ */
 template <class T>
 inline int bitsel(T opt, uint8_t bit)
 {
     return (opt & (1 << bit)) >> bit;
 }
 
+/**
+ * Encode the provided byte with Hamming 7-4 on each nibble. The high byte in the result is the
+ * encoded value of the high nibble of the argument.
+ *
+ * @param byte the byte to encode
+ * @return a 16-bit integer containing each nibble in the argument encoded with hamming 7-4
+ */
 uint16_t hammingEncode(const char byte)
 {
     // MSB of each byte is reserved for parity
@@ -26,8 +41,6 @@ uint16_t hammingEncode(const char byte)
     //    xx    xx    xx    xx       xx    xx    xx    xx
     //       xx xx       xx xx          xx xx       xx xx
     //             xx xx xx xx                xx xx xx xx
-    // /\       /\                /\
-    // parity  padding            parity
 
     // Move data bits around
     auto result = static_cast<uint16_t>(
@@ -39,7 +52,6 @@ uint16_t hammingEncode(const char byte)
         )
         & HAMMING_DATA_MASK
     );
-
 
     // low byte hamming
     result |= (bitsel(result, 2) ^ bitsel(result, 1) ^ bitsel(result, 0)) << 3; // p4
@@ -54,6 +66,13 @@ uint16_t hammingEncode(const char byte)
     return result;
 }
 
+/**
+ * Bitmask the data bits from the provided hamming-7-4 encoded byte, correcting any
+ * single-bit errors. Does not shift data bits.
+ *
+ * @param byte the byte to correct
+ * @return the data bits from the hamming-7-4 encoded byte
+ */
 uint8_t hammingCorrect(const char byte)
 {
     // 07 06 05 04 03 02 01 00
@@ -65,8 +84,6 @@ uint8_t hammingCorrect(const char byte)
     //    xx    xx    xx    xx
     //       xx xx       xx xx
     //             xx xx xx xx
-    // /\
-    // parity
 
     auto c = (bitsel(byte, 6) ^ bitsel(byte, 4) ^ bitsel(byte, 2) ^ bitsel(byte, 0)) |
              (bitsel(byte, 5) ^ bitsel(byte, 4) ^ bitsel(byte, 1) ^ bitsel(byte, 0)) << 1 |
@@ -82,6 +99,13 @@ uint8_t hammingCorrect(const char byte)
     return static_cast<uint8_t>(result & 0b00010111);
 }
 
+/**
+ * Decode the provided high and low byte which are encoded with hamming-7-4
+ *
+ * @param highByte the high byte in the encoded message
+ * @param lowByte the low byte in the encoded message
+ * @return the corrected data bits from the encoded bytes
+ */
 uint8_t hammingDecode(const char highByte, const char lowByte)
 {
     auto correctedHighByte = hammingCorrect(highByte);

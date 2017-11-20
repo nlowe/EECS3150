@@ -4,7 +4,22 @@
 #include <cstring>
 #include "NetworkBasedPhysicalLayer.h"
 
+/**
+ * The phy class contains a definition for close() which is ambiguous
+ * with the close syscall. This is just a wrapper for closing the specified
+ * file descriptor number
+ *
+ * @param fd the descriptor to close
+ * @return the result of <code>close(fd)</code>
+ */
 int close_sock(int fd) { return close(fd); }
+
+/**
+ * Extract the socket address from the specified struct
+ *
+ * @param s the struct to extract the address from
+ * @return a pointer to the extracted socket address
+ */
 void * getInAddr(struct sockaddr *s)
 {
     if (s->sa_family == AF_INET)

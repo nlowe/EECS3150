@@ -14,12 +14,18 @@ namespace libsts::phy
         explicit PhysicalLayerException(const std::string &__arg) : runtime_error(__arg) {}
     };
 
+    /**
+     * An exception thrown when the phy fails to bind to the specified port
+     */
     class BindException: public PhysicalLayerException
     {
     public:
         explicit BindException(const std::string &__arg) : PhysicalLayerException(__arg) {}
     };
 
+    /**
+     * An exception thrown when the phy encounters an unknown IOException
+     */
     class IOException: public PhysicalLayerException
     {
     public:

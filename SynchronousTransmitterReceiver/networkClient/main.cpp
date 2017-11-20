@@ -20,10 +20,19 @@ void printUsage()
     std::cout <<   "    <port>    The port to connect to" << std::endl;
     std::cout << R"(    <input>|- The file to "upload". If "-" read from stdin instead)" << std::endl;
     std::cout << std::endl;
-    std::cout << R"("Uploads" the specified file to the specified remote host with the specified mode error correction )";
-    std::cout << "to the specified remote host" << std::endl;
+    std::cout << R"("Uploads" the specified file to the specified remote host with the specified mode error )";
+    std::cout << "correction to the specified remote host" << std::endl;
 }
 
+/**
+ * Upload the specified file to the host listening on the specified port
+ *
+ * @param correctionType the type of error correction to use
+ * @param host the host to upload the file to
+ * @param port the port to connect to
+ * @param file the file to upload
+ * @return 0 iff the operation was successful
+ */
 int uploadFile(libsts::link::ErrorCorrectionType correctionType, std::string &host, uint16_t port, std::string &file)
 {
     std::ifstream reader;

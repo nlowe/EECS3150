@@ -28,7 +28,7 @@ namespace libsts::phy
          * @param remote the host or IP to connect to
          * @param port the port to connect on
          */
-        NetworkBasedPhysicalLayer(std::string remote, uint16_t port)
+        NetworkBasedPhysicalLayer(const std::string &remote, uint16_t port)
             : remote(std::move(remote)), port(port)
         {
         }
@@ -37,12 +37,14 @@ namespace libsts::phy
             close();
         }
 
+        /**
+         * If the phy is a server, block until a client connects
+         */
         void waitForConnection();
         
         bool eof() override;
         Direction getDirection() override;
 
-    public:
         void close() override;
 
         void open() override;
@@ -58,7 +60,14 @@ namespace libsts::phy
         std::string remote = "";
         uint16_t port{};
 
+        /**
+         * Open the phy as a client. Connect to the specified remote. Blocks until
+         * the connection is made or throws if we can't connect
+         */
         void open_client();
+        /**
+         * Binds to the specified port and starts listening for clients.
+         */
         void open_server();
     };
 }

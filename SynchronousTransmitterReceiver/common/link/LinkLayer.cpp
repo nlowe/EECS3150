@@ -32,6 +32,12 @@ namespace libsts::link
 
     void LinkLayer::writeCRC(const char *buff, size_t len)
     {
+        if (errorCorrectionType != libsts::link::ErrorCorrectionType::CRC_ANSI_16)
+        {
+            std::cerr << "Tried to write a frame using CRC but was not configured for CRC" << std::endl;
+            abort();
+        }
+
         // Each frame is at most 2 SYN + Size + 64 Data bytes + 2 bytes for CRC
         auto frame = new char[FRAME_MAX_LEN_CRC + 2]{0};
         frame[0] = SYN;
@@ -61,6 +67,12 @@ namespace libsts::link
 
     void LinkLayer::writeHamming(const char *buff, size_t len)
     {
+        if (errorCorrectionType != libsts::link::ErrorCorrectionType::HAMMING)
+        {
+            std::cerr << "Tried to write a frame with hamming but was not configured for hamming" << std::endl;
+            abort();
+        }
+
         // Each frame is at most 2 SYN + Size + 64 Data bytes
         // Hamming requires two bytes per payload byte
         auto frame = new char[FRAME_MAX_LEN_HAMMING]{0};
@@ -69,6 +81,7 @@ namespace libsts::link
 
         for(auto i = 0; i < len; i++)
         {
+            // Each payload byte becomes two bytes when encoded with hamming
             auto hamming = hammingEncode(buff[i]);
             frame[2 + 2 * i] = static_cast<char>(hamming >> 8);
             frame[2 + 2 * i + 1] = static_cast<char>(hamming & 0xff);
@@ -112,8 +125,14 @@ namespace libsts::link
         }
     }
 
-    bool LinkLayer::readFrameCRC(size_t chunkSize, std::vector<char>& data, std::vector<char>& frame)
+    bool LinkLayer::readFrameCRC(std::vector<char>& data, std::vector<char>& frame)
     {
+        if (errorCorrectionType != libsts::link::ErrorCorrectionType::CRC_ANSI_16)
+        {
+            std::cerr << "Tried to read frames using CRC but was not configured for CRC" << std::endl;
+            abort();
+        }
+
         // We may have gotten multiple frames in a single read from the phy
         bool isFinalFrameInBlock = false;
         while(!frame.empty() && frame.size() >= frame[1] + 5)
@@ -125,7 +144,7 @@ namespace libsts::link
             }
             else if(frame[4 + framePayloadSize] != SYN)
             {
-                throw FramingException("Expected end-of-frame at byte " + std::to_string(data.size() + chunkSize) + " but got " + std::to_string(frame[4 + framePayloadSize]));
+                throw FramingException("Expected end-of-frame but got " + std::to_string(frame[4 + framePayloadSize]));
             }
 
             auto crc = crc16ansi(frame, framePayloadSize, 2);
@@ -153,8 +172,14 @@ namespace libsts::link
         return isFinalFrameInBlock;
     }
 
-    bool LinkLayer::readFrameHamming(size_t chunkSize, std::vector<char>& data, std::vector<char>& frame)
+    bool LinkLayer::readFrameHamming(std::vector<char>& data, std::vector<char>& frame)
     {
+        if (errorCorrectionType != libsts::link::ErrorCorrectionType::HAMMING)
+        {
+            std::cerr << "Tried to read frames with hamming but was not configured for hamming" << std::endl;
+            abort();
+        }
+
         // We may have gotten multiple frames in a single read from the phy
         bool isFinalFrameInBlock = false;
         while(!frame.empty() && frame.size() >= frame[1] * 2 + 3)
@@ -167,7 +192,7 @@ namespace libsts::link
             }
             else if(frame[2 + frameEncodedSize] != SYN)
             {
-                throw FramingException("Expected end-of-frame at byte " + std::to_string(data.size() + chunkSize) + " but got " + std::to_string(frame[4 + framePayloadSize]));
+                throw FramingException("Expected end-of-frame but got " + std::to_string(frame[4 + framePayloadSize]));
             }
 
             for(auto i = 0; i < frameEncodedSize; i += 2)
@@ -215,8 +240,8 @@ namespace libsts::link
             // Extract the payload from the frame into the data buffer
             switch(getErrorCorrectionType())
             {
-                case libsts::link::ErrorCorrectionType::CRC_ANSI_16: isFinalFrameInBlock = readFrameCRC(chunkSize, dataBuffer, frameBuffer); break;
-                case libsts::link::ErrorCorrectionType::HAMMING: isFinalFrameInBlock = readFrameHamming(chunkSize, dataBuffer, frameBuffer); break;
+                case libsts::link::ErrorCorrectionType::CRC_ANSI_16: isFinalFrameInBlock = readFrameCRC(dataBuffer, frameBuffer); break;
+                case libsts::link::ErrorCorrectionType::HAMMING: isFinalFrameInBlock = readFrameHamming(dataBuffer, frameBuffer); break;
             }
         }while(!phy->eof() && chunkSize > 0 && !isFinalFrameInBlock);
 

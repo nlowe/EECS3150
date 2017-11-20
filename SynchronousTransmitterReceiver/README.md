@@ -4,16 +4,43 @@ A mockup of a synchronous transmitter (server) and receiver (client)
 
 ## Protocol
 
-There is no real protocol for this project. The "server" takes as input a file or string from standard input.
-It frames the payload and "encodes" it into ascii `0` and `1` bytes with a single parity bit. This project
-only accepts as input bytes from `0x00` to `0x7F` to conform with the project spec. An example "frame" is below:
+The "client" reads a file and uploads it to the "server". After the server receives the file, it responds to the
+client with a message containing the length of the received payload. To signal the end of a transmission, each
+endpoint on the network send a frame containing an `ETB` byte (hex `0x17`). 
 
-| Byte 0 | Byte 1 | Bytes 2..`<len>` | Byte 2 + `<len>` + 1 |
-| ------ | ------ | ---------------- | -------------------- |
-| `0x16` | Payload Length in bytes (`<len>`) | Payload bytes | `0x16` |
+The client and server pick either a hamming code or CRC for error correction and detection.
 
-The seven least-significant bits in each byte in the frame are expanded into an ascii '0' or '1'. The most-significant
-bit is replaced with an odd-parity bit.
+### Hamming
 
-To test parity, you can optionally pass the data through the `faulty-wire` program to flip one or more "bits"
-before handing off the data to the "client".
+| Byte 0 | Byte 1 | Bytes 2..(2 *`<len>`) | Byte 2 + (2 *`<len>`) + 1 |
+| ------ | ------ | --------------------- | ------------------------- |
+| `0x16` | Payload Length in bytes (`<len>`) | Payload bytes encoded with hamming-7-4 | `0x16` |
+
+For simplicity, we just encode each nibble in each payload btye with hamming-7-4:
+
+```c
+// MSB of each byte is reserved for parity
+// for simplicity, we just do hamming 7-4 twice which still allows
+// us to do an overall parity bit
+
+// 15 14 13 12 11 10 09 08    07 06 05 04 03 02 01 00
+//                            00 d6 d5 d4 d3 d2 d1 d0
+//
+//                     expands to
+//
+// __ p1 p2 00 p4 d6 d5 d4    __ p1 p2 d3 p4 d2 d1 d0
+//    xx    xx    xx    xx       xx    xx    xx    xx
+//       xx xx       xx xx          xx xx       xx xx
+//             xx xx xx xx                xx xx xx xx
+```
+
+In the frame, the high byte is placed first.
+
+### CRC
+
+| Byte 0 | Byte 1 | Bytes 2..`<len>` | Byte 2 + `<len>` + 1..2 | Byte 2 + `<len>` + 3 |
+| ------ | ------ | ---------------- | ----------------------- | -------------------- |
+| `0x16` | Payload Length in bytes (`<len>`) | Payload bytes | The CRC-16-ANSI checksum of the payload. High byte first | `0x16` |
+
+A lookup table is used to generate the CRC-16-ANSI checksum of the payload bytes. The high byte of the checksum
+appears first in the frame.

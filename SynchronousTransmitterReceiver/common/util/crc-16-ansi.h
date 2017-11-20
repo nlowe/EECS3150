@@ -1,7 +1,9 @@
 #ifndef SYNCHRONOUSTRANSMITTERRECEIVER_CRC_16_ANSI_H
 #define SYNCHRONOUSTRANSMITTERRECEIVER_CRC_16_ANSI_H
 
-// Table generated with crc-table.py in the root of this repo
+/**
+ * Table generated with crc-table.py in the root of this repo
+ */
 uint16_t lookup[256] =
 {
         0x0000, 0xc0c1, 0xc181, 0x0140, 0xc301, 0x03c0, 0x0280, 0xc241,
@@ -38,6 +40,13 @@ uint16_t lookup[256] =
         0x8201, 0x42c0, 0x4380, 0x8341, 0x4100, 0x81c1, 0x8081, 0x4040
 };
 
+/**
+ * Calculate the CRC-16-ANSI sum of the provided payload
+ *
+ * @param payload the bytes to calculate the checksum for
+ * @param len the length of the payload to sum
+ * @return the CRC-16-ANSI sum of the payload
+ */
 uint16_t crc16ansi(const char* payload, size_t len)
 {
     uint16_t remainder = 0xFFFF;
@@ -49,6 +58,14 @@ uint16_t crc16ansi(const char* payload, size_t len)
     return remainder;
 }
 
+/**
+ * Calculate the CRC-16-ANSI sum of the provided payload
+ *
+ * @param payload the bytes to calculate the checksum for
+ * @param len the length of the payload to sum
+ * @param off the offset into the buffer to start the checksum at
+ * @return the CRC-16-ANSI sum of the payload
+ */
 uint16_t crc16ansi(const std::vector<char>& payload, size_t len, size_t off)
 {
     uint16_t remainder = 0xFFFF;
