@@ -6,4 +6,4 @@ add_subdirectory(networkClient)
 add_subdirectory(networkServer)
 
 #need to rewrite tests for network-based-phy
-#add_subdirectory(tests)
+add_subdirectory(tests)
